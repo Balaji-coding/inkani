@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#06182a">
+  <meta name="description" content="Every visit brings a little something sweeter. Check your Inkani Bites rewards wallet.">
+  <title>Inkani Bites — A little more to love</title>
+  <link rel="icon" type="image/png" href="/asserts/inkani-favicon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/styles.css?v=20">
+  <script src="/app.js?v=17" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#main-content">Skip to content</a>
+  <header class="site-header">
+    <a class="brand" href="/" aria-label="Inkani Bites home">
+      <img class="brand-logo" src="/asserts/inkani-logo.png" alt="">
+      <span>INKANI <span class="brand-light">BITES</span></span>
+    </a>
+    <nav class="header-nav" aria-label="Main navigation">
+      <a href="#location">Find our cart</a>
+      <a href="#how-it-works">How it works</a>
+      <a class="nav-cta" href="#wallet">My rewards <span aria-hidden="true">↗</span></a>
+    </nav>
+  </header>
+
+  <main id="main-content">  
+    <section class="hero">
+      <div class="hero-banner">
+        <img src="/asserts/Royal%20Gold%20Dessert%20%26%20Snacks%20Banner.png" alt="Inkani Bites — desserts, snacks, custard, shakes, juices and more">
+      </div>
+      <div class="hero-copy">
+        <div class="eyebrow"><span class="eyebrow-line"></span> INKANI BITES REWARDS</div>
+        <h1>Come for the flavour.<br><em>Stay for the little extras.</em></h1>
+        <p>Every visit brings you closer to a complimentary fruit custard. Check your stamps and see what’s waiting for you.</p>
+        <div class="hero-actions">
+          <a class="button button-primary hero-button" href="#wallet">Check your rewards <span aria-hidden="true">↓</span></a>
+          <a class="hero-secondary-link" href="#location">Find today’s cart <span aria-hidden="true">↗</span></a>
+        </div>
+        <div class="hero-promise"><span aria-hidden="true">✳</span> Five visits. One complimentary fruit custard.</div>
+      </div>
+    </section>
+
+    <section class="location-section" id="location" aria-labelledby="locationTitle">
+      <div class="location-card reveal">
+        <div class="location-icon" aria-hidden="true"><span>⌖</span></div>
+        <div class="location-copy">
+          <div class="eyebrow"><span class="eyebrow-line"></span> TODAY’S CART LOCATION</div>
+          <h2 id="locationTitle">Come find <em>something delicious.</em></h2>
+          <p>We’re a street food cart, so our spot can change. Check here before you head out.</p>
+          <div class="shop-address-row"><span class="location-live-dot" aria-hidden="true"></span><div><span class="location-address-label">CURRENT SPOT</span><strong class="shop-address" id="shopAddress">Loading current location…</strong></div></div>
+        </div>
+        <a class="button button-primary location-button" id="shopMapLink" href="https://www.google.com/maps?q=9.911713,78.148075" target="_blank" rel="noopener noreferrer">Get directions <span aria-hidden="true">↗</span></a>
+        <p class="location-error hidden" id="locationError" role="status"></p>
+      </div>
+    </section>
+
+    <section class="products-section" aria-labelledby="productsTitle">
+      <div class="products-intro reveal">
+        <div class="eyebrow"><span class="eyebrow-line"></span> A LITTLE SOMETHING DELICIOUS</div>
+        <h2 id="productsTitle">A sweet reason<br><em>to come back.</em></h2>
+        <p>Make your next visit a little brighter with a bowl made for sharing—or savouring all to yourself.</p>
+      </div>
+      <article class="product-card reveal" id="custardProduct">
+        <div class="product-image-wrap"><img src="/asserts/custard-fruit-salad.png" alt="Fresh fruit salad served in creamy custard"><span class="product-image-badge">A CUSTOMER FAVOURITE</span></div>
+        <div class="product-details"><div><span class="product-category">FRESH · CREAMY · MADE WITH LOVE</span><h3>Custard Fruit Salad</h3><p>A colourful medley of fruit folded into smooth, creamy custard.</p></div><span class="product-price">₹60</span></div>
+        <p class="product-stock" id="productStock" aria-live="polite">Checking availability…</p>
+        <button class="button button-primary product-cta" id="orderProduct" type="button" disabled>Checking availability…</button>
+      </article>
+    </section>
+
+    <section class="wallet-section" id="wallet">
+      <div class="section-intro reveal">
+        <div class="eyebrow"><span class="eyebrow-line"></span> YOUR LITTLE REWARD JOURNEY</div>
+        <h2>Every visit <em>counts.</em></h2>
+        <p>One quick check to see your stamps, treats, and recent visits.</p>
+      </div>
+
+      <div class="wallet-card reveal">
+        <div class="wallet-topline"><span>INKANI BITES <span class="wallet-pass">REWARDS PASS</span></span><span class="wallet-chip">✳ &nbsp; YOUR REWARDS</span></div>
+        <div class="wallet-content">
+          <div class="wallet-form" id="walletForm">
+            <label for="searchPhone">Your mobile number</label>
+            <div class="phone-input">
+              <span class="country-code">+91</span>
+              <input id="searchPhone" type="tel" inputmode="numeric" autocomplete="tel-national" placeholder="10-digit number" maxlength="14">
+            </div>
+            <button class="button button-dark" id="walletButton" type="button">Find my rewards <span aria-hidden="true">→</span></button>
+            <p class="form-hint">Your number is only used to find your rewards pass.</p>
+          </div>
+          <div class="wallet-result hidden" id="walletResult" aria-live="polite">
+            <div class="customer-row"><div><span class="result-label">YOUR PASS</span><h3 id="customerName"></h3><p class="customer-phone" id="customerPhone"></p></div><button class="text-button" id="changeNumber" type="button">Change number</button></div>
+            <div class="stamp-heading"><span>YOUR STAMPS</span><span id="stampCount"></span></div>
+            <div class="stamp-track" id="stampSlots" aria-label="Loyalty stamps"></div>
+            <p class="wallet-status" id="walletStatus"></p>
+            <p class="wallet-refresh" id="walletRefresh" aria-live="polite"></p>
+            <div class="reward-banner hidden" id="rewardBanner"><span class="reward-icon">✳</span><span><strong>Your treat is waiting!</strong><small>Show this pass to the cashier to claim your free fruit custard.</small></span><span class="reward-quantity" id="rewardQuantity"></span></div>
+            <div class="share-row"><span>Keep your pass close</span><button class="text-button" id="copyPass" type="button">Copy pass link ↗</button></div>
+            <div class="feedback-invite">
+              <p>Your feedback is always welcome and helps us improve.</p>
+              <button class="button button-outline" id="openFeedback" type="button">Share your feedback <span aria-hidden="true">→</span></button>
+            </div>
+            <section class="purchase-history" aria-labelledby="purchaseHeading">
+              <div class="purchase-heading"><span class="result-label" id="purchaseHeading">YOUR RECENT VISITS</span><span class="result-label">PURCHASES</span></div>
+              <ol id="purchaseHistory"></ol>
+              <p class="purchase-empty hidden" id="purchaseEmpty">Your visit details will appear here after your next purchase.</p>
+            </section>
+          </div>
+          <div class="wallet-empty hidden" id="walletEmpty" aria-live="polite">
+            <span class="empty-star">✳</span><h3>Your first stamp is waiting.</h3>
+            <p>We couldn't find a pass for this number yet. Visit us and ask the team to get you started.</p>
+            <button class="text-button" id="tryAnother" type="button">Try another number</button>
+          </div>
+          <p class="wallet-error hidden" id="walletError" role="alert"></p>
+        </div>
+        <div class="wallet-footer"><span>GOOD FOOD, GOOD COMPANY, GOOD REWARDS.</span><span>01 — INKANI BITES</span></div>
+      </div>
+      <p class="wallet-fineprint"><span aria-hidden="true">✳</span> One stamp for every visit. Five stamps unlock one free fruit custard.</p>
+    </section>
+
+    <section class="how-section" id="how-it-works">
+      <div class="how-title reveal"><div class="eyebrow"><span class="eyebrow-line"></span> SIMPLE AS THAT</div><h2>A little love,<br><em>on the house.</em></h2><p>Because every visit should leave you with something lovely to look forward to.</p><span class="how-ornament" aria-hidden="true">✦ &nbsp; ✳ &nbsp; ✦</span></div>
+      <div class="steps">
+        <article class="step reveal"><span class="step-number">01</span><span class="step-icon">↗</span><h3>Come on in</h3><p>Enjoy the food you came for. Every visit is a chance to collect a stamp.</p></article>
+        <article class="step reveal"><span class="step-number">02</span><span class="step-icon">✳</span><h3>Collect five</h3><p>Give your mobile number to our cashier and watch your pass fill up.</p></article>
+        <article class="step reveal"><span class="step-number">03</span><span class="step-icon">♡</span><h3>Dessert is ours</h3><p>Five stamps, one complimentary fruit custard. A sweet little thank you.</p></article>
+      </div>
+    </section>
+
+    <section class="reviews-section" aria-labelledby="reviewsTitle">
+      <div class="reviews-intro reveal">
+        <div class="eyebrow"><span class="eyebrow-line"></span> KIND WORDS FROM OUR CUSTOMERS</div>
+        <h2 id="reviewsTitle">A little love <em>shared.</em></h2>
+        <p>Every note helps us make your next visit even better.</p>
+      </div>
+      <div class="reviews-grid" id="reviewsList" aria-live="polite">
+        <p class="reviews-empty" id="reviewsEmpty">Be the first to share what you think.</p>
+      </div>
+    </section>
+
+  </main>
+
+  <dialog class="reward-dialog" id="rewardDialog" aria-labelledby="rewardDialogTitle">
+    <button class="dialog-close" id="closeRewardDialog" type="button" aria-label="Close">×</button>
+    <span class="dialog-sparkle" aria-hidden="true">✳</span>
+    <p class="dialog-eyebrow">A LITTLE THANK-YOU FROM US</p>
+    <h2 id="rewardDialogTitle">Your next treat<br><em>is on the house!</em></h2>
+    <p class="dialog-copy">You’ve collected five visits. Please enjoy a complimentary fruit custard on your next visit to Inkani Bites.</p>
+    <button class="button button-primary" id="enjoyReward" type="button">Lovely, thank you <span aria-hidden="true">♡</span></button>
+  </dialog>
+
+  <dialog class="feedback-dialog" id="feedbackDialog" aria-labelledby="feedbackDialogTitle">
+    <button class="dialog-close" id="closeFeedback" type="button" aria-label="Close">×</button>
+    <span class="dialog-sparkle" aria-hidden="true">♡</span>
+    <p class="dialog-eyebrow">YOUR WORDS HELP US GROW</p>
+    <h2 id="feedbackDialogTitle">How was your<br><em>Inkani Bites experience?</em></h2>
+    <p class="dialog-copy" id="feedbackDialogCopy">We’d love to hear what you think. Your honest feedback helps us make every visit even better.</p>
+    <form id="feedbackForm">
+      <fieldset class="rating-fieldset">
+        <legend>Your rating</legend>
+        <div class="rating-stars" id="ratingStars" role="group" aria-label="Choose a rating from 1 to 5 stars">
+          <button type="button" class="rating-star" data-rating="1" aria-label="1 star" aria-pressed="false">★</button>
+          <button type="button" class="rating-star" data-rating="2" aria-label="2 stars" aria-pressed="false">★</button>
+          <button type="button" class="rating-star" data-rating="3" aria-label="3 stars" aria-pressed="false">★</button>
+          <button type="button" class="rating-star" data-rating="4" aria-label="4 stars" aria-pressed="false">★</button>
+          <button type="button" class="rating-star" data-rating="5" aria-label="5 stars" aria-pressed="false">★</button>
+        </div>
+        <p class="rating-caption" id="ratingCaption">Tap a star to rate your visit.</p>
+      </fieldset>
+      <label class="feedback-label" for="feedbackText">Tell us a little more</label>
+      <textarea id="feedbackText" maxlength="500" rows="4" placeholder="What did you enjoy? What could we do better?"></textarea>
+      <p class="feedback-error hidden" id="feedbackError" role="alert"></p>
+      <div class="feedback-actions">
+        <button class="button button-primary" id="submitFeedback" type="submit">Share feedback <span aria-hidden="true">→</span></button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog class="order-dialog" id="orderDialog" aria-labelledby="orderDialogTitle">
+    <button class="dialog-close" id="closeOrderDialog" type="button" aria-label="Close">×</button>
+    <span class="dialog-sparkle" aria-hidden="true">✳</span>
+    <p class="dialog-eyebrow" id="orderDialogEyebrow">WE’D LOVE TO SERVE YOU</p>
+    <h2 id="orderDialogTitle">A little treat<br><em>is just a call away.</em></h2>
+    <p class="dialog-copy" id="orderDialogCopy">Online ordering is coming soon. For now, please call us to place your order—we look forward to preparing something delicious for you.</p>
+    <a class="button button-primary" id="callStore" href="tel:9345065011">Call Inkani Bites · 9345065011 <span aria-hidden="true">↗</span></a>
+  </dialog>
+
+  <footer class="site-footer"><a class="brand" href="/"><img class="brand-logo" src="/asserts/inkani-logo.png" alt=""><span>INKANI <span class="brand-light">BITES</span></span></a><span>GOOD FOOD. GOOD THINGS COME BACK.</span></footer>
+</body>
+</html>

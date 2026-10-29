@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#06182a">
+  <title>Team counter — Inkani Bites</title>
+  <link rel="icon" type="image/png" href="/asserts/inkani-favicon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/styles.css?v=20">
+  <script src="/cashier.js?v=12" defer></script>
+</head>
+<body class="cashier-page">
+  <a class="skip-link" href="#main-content">Skip to content</a>
+  <header class="site-header">
+    <a class="brand" href="/" aria-label="Inkani Bites home"><img class="brand-logo" src="/asserts/inkani-logo.png" alt=""><span>INKANI <span class="brand-light">BITES</span></span></a>
+    <a class="back-link" href="/">← &nbsp; Back to rewards</a>
+  </header>
+  <main class="cashier-main" id="main-content">
+    <div class="cashier-heading"><div class="eyebrow"><span class="eyebrow-line"></span> TEAM COUNTER</div><h1>Make their<br><em>day a little sweeter.</em></h1><p>Verify a rewards pass, record a visit, or update today’s availability.</p></div>
+    <div class="cashier-tools">
+      <section class="cashier-card verification-card" aria-labelledby="verificationTitle">
+        <div class="counter-card-heading"><span class="counter-mark">✓</span><span><strong id="verificationTitle">Customer verification</strong><small>Check their pass and reward progress.</small></span></div>
+        <form id="verificationForm">
+          <label for="verificationPhone">Customer mobile number</label>
+          <div class="phone-input cashier-phone"><span class="country-code">+91</span><input id="verificationPhone" type="tel" inputmode="numeric" autocomplete="tel-national" placeholder="10-digit number" maxlength="14" required></div>
+          <label for="verificationPin">Team PIN</label>
+          <input id="verificationPin" class="pin-input" type="password" inputmode="numeric" autocomplete="current-password" placeholder="Enter your team PIN" required>
+          <button class="button button-outline verification-button" id="verifyButton" type="submit">Verify customer pass <span aria-hidden="true">→</span></button>
+        </form>
+        <div class="verification-result hidden" id="verificationResult" aria-live="polite">
+          <div class="verified-customer"><span class="result-label">CUSTOMER</span><strong id="verifiedName"></strong><small id="verifiedPhone"></small></div>
+          <div class="verification-stats">
+            <div><strong id="verifiedVisits">0</strong><span>Visits completed</span></div>
+            <div><strong id="verifiedRewards">0</strong><span>Rewards available</span></div>
+          </div>
+          <p class="verification-open-note" id="verifiedOpenSentence"></p>
+          <div class="verification-progress-heading"><span>Progress to next reward</span><strong id="verifiedProgressLabel">0 / 5 visits</strong></div>
+          <div class="verification-progress-track" role="progressbar" aria-label="Progress to next reward" aria-valuemin="0" aria-valuemax="5" aria-valuenow="0"><span id="verifiedProgress"></span></div>
+          <p class="verification-message" id="verificationMessage"></p>
+        </div>
+        <p class="counter-result hidden" id="verificationError" role="alert"></p>
+      </section>
+
+      <section class="cashier-card rewards-counter-card">
+        <div class="counter-card-heading"><span class="counter-mark">✳</span><span><strong>Rewards counter</strong><small>Add a visit or redeem a well-earned treat.</small></span><span class="secure-mark">● SECURE</span></div>
+        <form id="cashierForm">
+          <label for="cPhone">Customer mobile number</label>
+          <div class="phone-input cashier-phone"><span class="country-code">+91</span><input id="cPhone" type="tel" inputmode="numeric" autocomplete="tel-national" placeholder="10-digit number" maxlength="14" required></div>
+          <label for="cName">Customer name <span class="optional">(optional)</span></label>
+          <input id="cName" class="pin-input" type="text" autocomplete="name" maxlength="80" placeholder="Name to personalise their pass">
+          <label for="cBill">Bill amount <span class="optional">(optional)</span></label>
+          <div class="bill-input"><span>₹</span><input id="cBill" type="number" min="0" step="0.01" placeholder="0.00"></div>
+          <label for="cItems">Items purchased <span class="optional">(optional)</span></label>
+          <input id="cItems" class="pin-input" type="text" maxlength="160" placeholder="e.g. Fruit custard, mango shake">
+          <label for="cPin">Team PIN</label>
+          <input id="cPin" class="pin-input" type="password" inputmode="numeric" autocomplete="current-password" placeholder="Enter your team PIN" required>
+          <div class="counter-actions"><button class="button button-primary" id="awardButton" type="button">Add a visit <span aria-hidden="true">→</span></button><button class="button button-outline" id="redeemButton" type="button">Redeem a treat <span aria-hidden="true">↗</span></button></div>
+          <div class="counter-result hidden" id="resultBox" role="status" aria-live="polite"></div>
+        </form>
+        <p class="counter-footnote">Five visits unlock one free fruit custard.</p>
+      </section>
+
+      <section class="cashier-card availability-card" aria-labelledby="availabilityTitle">
+        <div class="availability-control">
+          <div class="availability-heading"><span class="counter-mark">✳</span><span><strong id="availabilityTitle">Custard Fruit Salad</strong><small>Storefront availability</small></span><span class="availability-status" id="availabilityStatus">Loading…</span></div>
+          <div class="availability-fields">
+            <div><label class="availability-select-label" for="productAvailability">Product status</label>
+              <select id="productAvailability" class="pin-input" disabled>
+                <option value="true">Active — available to order</option>
+                <option value="false">Inactive — currently out of stock</option>
+              </select>
+            </div>
+            <div><label class="availability-select-label" for="availabilityPin">Team PIN to confirm this change</label>
+              <input id="availabilityPin" class="pin-input" type="password" inputmode="numeric" autocomplete="current-password" placeholder="Enter your team PIN">
+            </div>
+          </div>
+          <button class="button button-outline availability-save" id="saveAvailability" type="button" disabled>Update product status <span aria-hidden="true">→</span></button>
+          <p class="availability-help">This change applies to the customer product card immediately.</p>
+          <p class="counter-result hidden" id="availabilityResult" role="status" aria-live="polite"></p>
+        </div>
+      </section>
+
+      <section class="cashier-card location-admin-card" aria-labelledby="locationAdminTitle">
+        <div class="counter-card-heading"><span class="counter-mark">⌖</span><span><strong id="locationAdminTitle">Shop location</strong><small>Update where customers can find the cart.</small></span></div>
+        <form id="shopLocationForm">
+          <label for="shopAddressInput">Current shop address</label>
+          <input id="shopAddressInput" class="pin-input" type="text" maxlength="180" placeholder="Street, area, city and postcode" required>
+          <label for="shopMapsUrlInput">Google Maps link</label>
+          <input id="shopMapsUrlInput" class="pin-input" type="url" maxlength="2000" placeholder="Paste a Google Maps share link" required>
+          <p class="location-admin-help">Share the current pin from Google Maps so customers get directions to the cart’s latest location.</p>
+          <label for="locationPin">Team PIN</label>
+          <input id="locationPin" class="pin-input" type="password" inputmode="numeric" autocomplete="current-password" placeholder="Enter your team PIN" required>
+          <button class="button button-outline location-save" id="saveLocationButton" type="submit">Update shop location <span aria-hidden="true">→</span></button>
+          <p class="counter-result hidden" id="locationResult" role="status" aria-live="polite"></p>
+        </form>
+      </section>
+    </div>
+    <a class="cashier-home-link" href="/">← Return to the Inkani Bites rewards pass</a>
+  </main>
+  <footer class="site-footer"><a class="brand" href="/"><img class="brand-logo" src="/asserts/inkani-logo.png" alt=""><span>INKANI <span class="brand-light">BITES</span></span></a><span>GOOD FOOD. GOOD COMPANY. GOOD REWARDS.</span><span>TEAM COUNTER</span></footer>
+</body>
+</html>
