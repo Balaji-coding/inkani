@@ -5,7 +5,6 @@ const walletResult = document.getElementById('walletResult');
 const walletEmpty = document.getElementById('walletEmpty');
 const walletError = document.getElementById('walletError');
 const walletRefresh = document.getElementById('walletRefresh');
-const SAVED_PHONE_KEY = 'inkaniCustomerPhone';
 let activePhone = null;
 let walletRefreshInProgress = false;
 const rewardNoticeVisits = new Map();
@@ -35,24 +34,6 @@ function showPanel(panel) {
   walletResult.classList.toggle('hidden', panel !== 'result');
   walletEmpty.classList.toggle('hidden', panel !== 'empty');
   walletError.classList.add('hidden');
-}
-
-function getSavedPhone() {
-  try {
-    return localStorage.getItem(SAVED_PHONE_KEY);
-  } catch (error) {
-    console.error('Unable to read the saved rewards phone number:', error);
-    return null;
-  }
-}
-
-function savePhone(phone) {
-  try {
-    localStorage.setItem(SAVED_PHONE_KEY, phone);
-  } catch (error) {
-    console.error('Unable to save the rewards phone number:', error);
-    walletRefresh.textContent = 'Your browser could not save this number for next time.';
-  }
 }
 
 function renderPurchaseHistory(history) {
@@ -302,7 +283,7 @@ async function loadShopLocation() {
   }
 }
 
-async function fetchWallet({ silent = false, phoneOverride = null } = {}) {
+async function fetchWallet({ silent = false, phoneOverride = null, promptForRating = false } = {}) {
   const phone = phoneOverride || normalizedPhone(phoneInput.value);
   if (!phone) {
     if (silent) return;
@@ -315,7 +296,6 @@ async function fetchWallet({ silent = false, phoneOverride = null } = {}) {
   walletRefreshInProgress = true;
   activePhone = phone;
   phoneInput.value = phone;
-  savePhone(phone);
   if (!silent) {
     walletButton.disabled = true;
     walletButton.innerHTML = 'Finding your pass <span class="loading-dot">…</span>';
@@ -331,9 +311,7 @@ async function fetchWallet({ silent = false, phoneOverride = null } = {}) {
         walletRefresh.textContent = 'Your latest rewards pass was not found.';
         return;
       }
-      currentWalletData = { phone, rating: 0, ratingFeedback: '' };
       showPanel('empty');
-      promptForFirstRating(currentWalletData);
       return;
     }
     if (!response.ok) throw new Error(data.error || 'Unable to load your rewards pass.');
@@ -346,7 +324,7 @@ async function fetchWallet({ silent = false, phoneOverride = null } = {}) {
       }
     }
     renderWallet(data);
-    if (!silent) promptForFirstRating(data);
+    if (!silent && promptForRating) promptForFirstRating(data);
   } catch (error) {
     if (silent) {
       walletRefresh.textContent = 'Could not refresh right now. Will try again shortly.';
@@ -363,23 +341,18 @@ async function fetchWallet({ silent = false, phoneOverride = null } = {}) {
   }
 }
 
-walletButton.addEventListener('click', fetchWallet);
+walletButton.addEventListener('click', () => fetchWallet({ promptForRating: true }));
 phoneInput.addEventListener('keydown', (event) => {
-  if (event.key === 'Enter') fetchWallet();
+  if (event.key === 'Enter') fetchWallet({ promptForRating: true });
 });
-function forgetSavedPhone() {
+function changeWalletPhone() {
   activePhone = null;
-  try {
-    localStorage.removeItem(SAVED_PHONE_KEY);
-  } catch (error) {
-    console.error('Unable to remove the saved rewards phone number:', error);
-  }
   phoneInput.value = '';
   showPanel('form');
 }
 
-document.getElementById('changeNumber').addEventListener('click', forgetSavedPhone);
-document.getElementById('tryAnother').addEventListener('click', forgetSavedPhone);
+document.getElementById('changeNumber').addEventListener('click', changeWalletPhone);
+document.getElementById('tryAnother').addEventListener('click', changeWalletPhone);
 document.getElementById('openFeedback').addEventListener('click', () => openFeedbackDialog());
 document.getElementById('closeFeedback').addEventListener('click', () => feedbackDialog.close());
 feedbackForm.addEventListener('submit', submitFeedback);
@@ -514,8 +487,7 @@ document.addEventListener('visibilitychange', () => {
   }
 });
 
-const initialPhone = new URLSearchParams(window.location.search).get('phone')
-  || getSavedPhone();
+const initialPhone = new URLSearchParams(window.location.search).get('phone');
 if (initialPhone && normalizedPhone(initialPhone)) {
   phoneInput.value = initialPhone;
   fetchWallet({ phoneOverride: normalizedPhone(initialPhone) });

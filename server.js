@@ -341,7 +341,11 @@ async function start() {
   if (!CASHIER_PIN) {
     throw new Error('CASHIER_PIN must be set in the environment before starting the server.');
   }
-  await mongoose.connect(process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/inkanibites');
+  const mongoUri = process.env.MONGO_URI || process.env.MONGO_URL;
+  if (!mongoUri || mongoUri.includes('<db_password>')) {
+    throw new Error('Set MONGO_URI (or MONGO_URL) to the MongoDB Atlas connection string with <db_password> replaced by the URL-encoded database password.');
+  }
+  await mongoose.connect(mongoUri);
   app.listen(PORT, () => {
     console.log(`Inkani Bites is running on port ${PORT}`);
   });
