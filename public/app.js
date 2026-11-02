@@ -1,4 +1,5 @@
 const phoneInput = document.getElementById('searchPhone');
+const visitHeading = document.getElementById('visitHeading');
 const walletButton = document.getElementById('walletButton');
 const walletForm = document.getElementById('walletForm');
 const walletResult = document.getElementById('walletResult');
@@ -67,6 +68,16 @@ function renderPurchaseHistory(history) {
   }
 }
 
+function renderVisitHeading(totalVisits = null) {
+  const headingText = totalVisits === null ? 'Every visit ' : 'You’ve made ';
+  const emphasizedText = totalVisits === null
+    ? 'counts.'
+    : `${totalVisits} ${totalVisits === 1 ? 'visit' : 'visits'}.`;
+  const emphasis = document.createElement('em');
+  emphasis.textContent = emphasizedText;
+  visitHeading.replaceChildren(document.createTextNode(headingText), emphasis);
+}
+
 function showRewardUnlocked(name) {
   const dialog = document.getElementById('rewardDialog');
   const firstName = name && name !== 'Valued Guest' ? name : 'there';
@@ -96,6 +107,10 @@ function maybeShowRewardUnlocked(data, name) {
 
 function renderWallet(data) {
   currentWalletData = data;
+  const totalVisits = Number(data.totalLifetimeVisits);
+  const visitCount = Number.isFinite(totalVisits) && totalVisits >= 0 ? totalVisits : 0;
+  renderVisitHeading(visitCount);
+
   const name = typeof data.name === 'string' ? data.name.trim() : '';
   document.getElementById('customerName').textContent = name && name !== 'Valued Guest'
     ? `Welcome, ${name}`
@@ -304,17 +319,23 @@ async function fetchWallet({ silent = false, phoneOverride = null, promptForRati
   }
 
   try {
-    const response = await fetch(`/api/customer/${encodeURIComponent(phone)}`);
-    const data = await response.json();
+    const customerUrl = `/api/customer/${encodeURIComponent(phone)}`;
+    let response = await fetch(customerUrl);
+    let data = await response.json();
     if (response.status === 404) {
       if (silent) {
         walletRefresh.textContent = 'Your latest rewards pass was not found.';
         return;
       }
-      showPanel('empty');
-      return;
+      response = await fetch(customerUrl, { method: 'PUT' });
+      data = await response.json();
     }
     if (!response.ok) throw new Error(data.error || 'Unable to load your rewards pass.');
+    try {
+      localStorage.setItem('inkaniCustomerPhone', phone);
+    } catch (error) {
+      console.error('Unable to remember the rewards phone number:', error);
+    }
     if (!silent) {
       try {
         const openResponse = await fetch(`/api/customer/${encodeURIComponent(phone)}/open`, { method: 'POST' });
@@ -348,6 +369,12 @@ phoneInput.addEventListener('keydown', (event) => {
 function changeWalletPhone() {
   activePhone = null;
   phoneInput.value = '';
+  renderVisitHeading();
+  try {
+    localStorage.removeItem('inkaniCustomerPhone');
+  } catch (error) {
+    console.error('Unable to clear the remembered rewards phone number:', error);
+  }
   showPanel('form');
 }
 
@@ -489,8 +516,21 @@ document.addEventListener('visibilitychange', () => {
 
 const initialPhone = new URLSearchParams(window.location.search).get('phone');
 if (initialPhone && normalizedPhone(initialPhone)) {
-  phoneInput.value = initialPhone;
-  fetchWallet({ phoneOverride: normalizedPhone(initialPhone) });
+  const phone = normalizedPhone(initialPhone);
+  phoneInput.value = phone;
+  fetchWallet({ phoneOverride: phone, promptForRating: true });
+} else {
+  try {
+    const savedPhone = normalizedPhone(localStorage.getItem('inkaniCustomerPhone') || '');
+    if (savedPhone) {
+      phoneInput.value = savedPhone;
+      fetchWallet({ phoneOverride: savedPhone, promptForRating: true });
+    } else if (localStorage.getItem('inkaniCustomerPhone')) {
+      localStorage.removeItem('inkaniCustomerPhone');
+    }
+  } catch (error) {
+    console.error('Unable to restore the remembered rewards phone number:', error);
+  }
 }
 loadProductAvailability();
 loadShopLocation();

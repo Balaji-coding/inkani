@@ -13,6 +13,13 @@ const DEFAULT_SHOP_ADDRESS = 'Teppakulam, Madurai, Tamil Nadu 625009';
 const DEFAULT_SHOP_MAPS_URL = 'https://www.google.com/maps/place/9%C2%B054\'42.2%22N+78%C2%B008\'53.1%22E/@9.9117149,78.1471646,18z/data=!3m1!4b1!4m13!1m8!3m7!1s0x3b00c50726b72ae3:0xe013610ff6d4b0d6!2sTeppakulam,+Madurai,+Tamil+Nadu+625009!3b1!8m2!3d9.9114761!4d78.1498516!16s%2Fg%2F11gjw_8qy3!3m3!8m2!3d9.911713!4d78.148075?entry=ttu&g_ep=EgoyMDI2MTAyMC4wIKXMDSoASAFQAw%3D%3D';
 
 app.use(express.json({ limit: '10kb' }));
+app.get('/health', (req, res) => {
+  const databaseConnected = mongoose.connection.readyState === 1;
+  return res.status(databaseConnected ? 200 : 503).json({
+    status: databaseConnected ? 'ok' : 'unavailable',
+    database: databaseConnected ? 'connected' : 'disconnected'
+  });
+});
 app.use(express.static(path.join(__dirname, 'public')));
 
 function normalizePhone(value) {
@@ -148,6 +155,24 @@ app.get('/api/customer/:phone', async (req, res, next) => {
     if (!customer) {
       return res.status(404).json({ message: 'Profile not found' });
     }
+    return res.json(customer);
+  } catch (error) {
+    return next(error);
+  }
+});
+
+app.put('/api/customer/:phone', async (req, res, next) => {
+  const phone = normalizePhone(req.params.phone);
+  if (!phone) {
+    return res.status(400).json({ error: 'Enter a valid 10-digit mobile number.' });
+  }
+
+  try {
+    const customer = await Customer.findOneAndUpdate(
+      { phone },
+      { $setOnInsert: { phone } },
+      { new: true, upsert: true, setDefaultsOnInsert: true, runValidators: true, lean: true }
+    );
     return res.json(customer);
   } catch (error) {
     return next(error);

@@ -5,17 +5,17 @@ A responsive customer loyalty wallet and cashier counter for the Inkani Bites re
 ## Requirements
 
 - Node.js 18 or newer
-- MongoDB (local or hosted)
+- A MongoDB Atlas database
 
 ## Run locally
 
 1. Install dependencies with `npm install`.
 2. Copy `.env.example` to `.env`.
-3. Set `MONGO_URI` to your MongoDB connection string and replace `CASHIER_PIN` with a private team PIN.
+3. Replace `<db_password>` in `MONGO_URI` with the URL-encoded password for the Atlas database user, and replace `CASHIER_PIN` with a private team PIN. `MONGO_URL` is also accepted as an alias. The app requires this Atlas URI and will not fall back to a local database.
 4. Start the website with `npm start` (or `npm run dev` during development).
-5. Visit `http://localhost:5000`. The team counter is at `http://localhost:5000/cashier.html`.
+5. Visit `http://localhost:10000` (or the port set in `PORT`). The team counter is at `http://localhost:10000/cashier.html`.
 
-The server deliberately will not start without `CASHIER_PIN`. Do not use a public or default PIN in production. Configure the environment variables in your hosting provider rather than committing a `.env` file. Use HTTPS in production to encrypt the PIN in transit.
+The server deliberately will not start without `CASHIER_PIN` or a configured Atlas `MONGO_URI`. Do not use a public or default PIN in production. Configure the environment variables in your hosting provider rather than committing a `.env` file. Use HTTPS in production to encrypt the PIN in transit.
 
 ## Rewards
 
@@ -23,7 +23,9 @@ Each cashier visit adds one stamp. Every five stamps unlock one free fruit custa
 
 ## API
 
+- `GET /health` — readiness check; returns `200` when MongoDB is connected and `503` otherwise.
 - `GET /api/customer/:phone` — retrieve a wallet by 10-digit phone number (an optional `+91` prefix is accepted).
+- `PUT /api/customer/:phone` — initialize a rewards profile for a valid phone number when one does not exist.
 - `POST /api/customer/:phone/open` — record a customer rewards-pass opening and return the updated open count.
 - `POST /api/customer/:phone/rating` — save or update a customer's 1–5 star rating and optional feedback.
 - `GET /api/reviews` — retrieve the latest public customer ratings and feedback.
