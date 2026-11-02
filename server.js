@@ -7,7 +7,7 @@ const Customer = require('./models/Customer');
 const LoyaltySettings = require('./models/LoyaltySettings');
 
 const app = express();
-const PORT = Number(process.env.PORT) || 5000;
+const PORT = Number(process.env.PORT) || 10000;
 const CASHIER_PIN = process.env.CASHIER_PIN;
 const DEFAULT_SHOP_ADDRESS = 'Teppakulam, Madurai, Tamil Nadu 625009';
 const DEFAULT_SHOP_MAPS_URL = 'https://www.google.com/maps/place/9%C2%B054\'42.2%22N+78%C2%B008\'53.1%22E/@9.9117149,78.1471646,18z/data=!3m1!4b1!4m13!1m8!3m7!1s0x3b00c50726b72ae3:0xe013610ff6d4b0d6!2sTeppakulam,+Madurai,+Tamil+Nadu+625009!3b1!8m2!3d9.9114761!4d78.1498516!16s%2Fg%2F11gjw_8qy3!3m3!8m2!3d9.911713!4d78.148075?entry=ttu&g_ep=EgoyMDI2MTAyMC4wIKXMDSoASAFQAw%3D%3D';
@@ -337,21 +337,26 @@ app.use((error, req, res, next) => {
   return res.status(500).json({ error: 'Something went wrong. Please try again.' });
 });
 
-async function start() {
-  if (!CASHIER_PIN) {
-    throw new Error('CASHIER_PIN must be set in the environment before starting the server.');
+async function startServer() {
+  try {
+    if (!CASHIER_PIN) {
+      throw new Error('CASHIER_PIN must be set in the environment before starting the server.');
+    }
+    const mongoUri = process.env.MONGO_URI || process.env.MONGO_URL;
+    if (!mongoUri || mongoUri.includes('<db_password>')) {
+      throw new Error('Set MONGO_URI (or MONGO_URL) to the MongoDB Atlas connection string with <db_password> replaced by the URL-encoded database password.');
+    }
+
+    await mongoose.connect(mongoUri);
+    console.log('Connected to MongoDB successfully');
+
+    app.listen(PORT, '0.0.0.0', () => {
+      console.log(`Server listening on port ${PORT}`);
+    });
+  } catch (error) {
+    console.error('CRITICAL STARTUP ERROR:', error);
+    process.exit(1);
   }
-  const mongoUri = process.env.MONGO_URI || process.env.MONGO_URL;
-  if (!mongoUri || mongoUri.includes('<db_password>')) {
-    throw new Error('Set MONGO_URI (or MONGO_URL) to the MongoDB Atlas connection string with <db_password> replaced by the URL-encoded database password.');
-  }
-  await mongoose.connect(mongoUri);
-  app.listen(PORT, () => {
-    console.log(`Inkani Bites is running on port ${PORT}`);
-  });
 }
 
-start().catch((error) => {
-  console.error('Unable to start Inkani Bites:', error);
-  process.exitCode = 1;
-});
+startServer();
