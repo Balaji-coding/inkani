@@ -23,6 +23,8 @@ let currentWalletData = null;
 let selectedRating = 0;
 
 const ratingCaptions = ['', 'We’re sorry it missed the mark.', 'There’s room for us to do better.', 'Thanks! We’re glad you enjoyed it.', 'Wonderful! We’re so glad.', 'Amazing! Thank you for the love.'];
+const productList = document.getElementById('productList');
+let storefrontProducts = [];
 
 function normalizedPhone(value) {
   const digits = value.replace(/\D/g, '');
@@ -392,24 +394,22 @@ feedbackDialog.addEventListener('click', (event) => {
 document.getElementById('closeRewardDialog').addEventListener('click', () => document.getElementById('rewardDialog').close());
 document.getElementById('enjoyReward').addEventListener('click', () => document.getElementById('rewardDialog').close());
 document.getElementById('closeOrderDialog').addEventListener('click', () => document.getElementById('orderDialog').close());
-document.getElementById('orderProduct').addEventListener('click', () => {
+productList.addEventListener('click', (event) => {
+  const button = event.target.closest('[data-order-product]');
+  if (!button) return;
+  const product = storefrontProducts.find((item) => item.id === button.dataset.orderProduct);
+  if (!product) return;
   const dialog = document.getElementById('orderDialog');
-  const availability = dialog.dataset.available;
-  const available = availability === 'true';
-  const unavailable = availability === 'false';
-  document.getElementById('orderDialogEyebrow').textContent = unavailable
+  const available = product.available === true;
+  document.getElementById('orderDialogEyebrow').textContent = !available
     ? 'A QUICK STOCK UPDATE'
     : 'WE’D LOVE TO SERVE YOU';
   document.getElementById('orderDialogTitle').innerHTML = available
     ? 'A little treat<br><em>is just a call away.</em>'
-    : unavailable
-      ? 'We’re sorry,<br><em>this treat is out of stock.</em>'
-      : 'Let us help you<br><em>choose something lovely.</em>';
+    : 'We’re sorry,<br><em>this treat is out of stock.</em>';
   document.getElementById('orderDialogCopy').textContent = available
-    ? 'Online ordering is coming soon. For now, please call us to place your order—we look forward to preparing something delicious for you.'
-    : unavailable
-      ? 'Custard Fruit Salad is not currently in stock. Please call us and we’ll be happy to let you know what’s freshly available.'
-      : 'We can’t confirm the latest stock right now. Please call us and our team will be happy to help with your order.';
+    ? `Online ordering is coming soon. For now, please call us to order ${product.name}—we look forward to preparing something delicious for you.`
+    : `${product.name} is not currently in stock. Please call us and we’ll be happy to let you know what’s freshly available.`;
   document.getElementById('callStore').textContent = `Call Inkani Bites · ${ORDER_PHONE_NUMBER}`;
   if (!dialog.open) dialog.showModal();
 });
@@ -417,40 +417,116 @@ document.getElementById('orderDialog').addEventListener('click', (event) => {
   if (event.target === event.currentTarget) event.currentTarget.close();
 });
 
-async function loadProductAvailability() {
-  const button = document.getElementById('orderProduct');
-  const status = document.getElementById('productStock');
-  try {
-    const response = await fetch('/api/products/custard-fruit-salad');
-    const data = await response.json();
-    if (!response.ok || typeof data.available !== 'boolean') {
-      throw new Error(data.error || 'Product availability is unavailable.');
+function renderProducts() {
+  productList.replaceChildren();
+  if (!storefrontProducts.length) {
+    const empty = document.createElement('p');
+    empty.className = 'products-loading';
+    empty.textContent = 'There are no products on today’s menu yet.';
+    productList.appendChild(empty);
+    return;
+  }
+  for (const product of storefrontProducts) {
+    const card = document.createElement('article');
+    card.className = `product-card reveal${product.available ? '' : ' is-unavailable'}`;
+    const imageWrap = document.createElement('div');
+    imageWrap.className = 'product-image-wrap';
+    const showImagePlaceholder = () => {
+      imageWrap.classList.add('is-placeholder');
+      const placeholder = document.createElement('span');
+      placeholder.className = 'product-image-placeholder';
+      placeholder.setAttribute('aria-hidden', 'true');
+      placeholder.textContent = '✳';
+      imageWrap.prepend(placeholder);
+    };
+    if (product.imagePath) {
+      const image = document.createElement('img');
+      image.src = product.imagePath;
+      image.alt = product.name;
+      image.loading = 'lazy';
+      image.decoding = 'async';
+      let triedLegacyImage = false;
+      image.addEventListener('error', () => {
+        if (product.id === 'custard-fruit-salad' && !triedLegacyImage) {
+          triedLegacyImage = true;
+          image.src = '/asserts/custard-fruit-salad.png';
+        } else {
+          image.remove();
+          showImagePlaceholder();
+        }
+      });
+      imageWrap.appendChild(image);
+    } else {
+      showImagePlaceholder();
     }
-    applyProductAvailability(data.available);
-  } catch (error) {
-    status.textContent = 'We could not confirm availability. Please call us to check.';
-    button.textContent = `Call to check · ${ORDER_PHONE_NUMBER}`;
-    button.disabled = false;
-    document.getElementById('orderDialog').dataset.available = 'unknown';
-    console.error('Unable to load fruit custard availability:', error);
+    const shine = document.createElement('div');
+    shine.className = 'product-image-shine';
+    imageWrap.appendChild(shine);
+    if (product.id === 'custard-fruit-salad') {
+      const badge = document.createElement('span');
+      badge.className = 'product-image-badge';
+      badge.textContent = 'A CUSTOMER FAVOURITE';
+      imageWrap.appendChild(badge);
+    }
+    if (typeof product.offer === 'string' && product.offer.trim()) {
+      const ribbon = document.createElement('span');
+      ribbon.className = 'product-offer-ribbon';
+      ribbon.setAttribute('aria-label', `Offer: ${product.offer.trim()}`);
+      const ribbonText = document.createElement('span');
+      ribbonText.textContent = product.offer.trim();
+      ribbon.appendChild(ribbonText);
+      imageWrap.appendChild(ribbon);
+    }
+    card.appendChild(imageWrap);
+
+    const details = document.createElement('div');
+    details.className = 'product-details';
+    const description = document.createElement('div');
+    const category = document.createElement('span');
+    category.className = 'product-category';
+    category.textContent = 'FRESH · MADE WITH LOVE';
+    const name = document.createElement('h3');
+    name.textContent = product.name;
+    const productDescription = document.createElement('p');
+    productDescription.textContent = product.description || 'Freshly made with care.';
+    const price = document.createElement('span');
+    price.className = 'product-price';
+    price.textContent = new Intl.NumberFormat('en-IN', {
+      style: 'currency',
+      currency: 'INR',
+      maximumFractionDigits: 2
+    }).format(product.price);
+    description.append(category, name, productDescription);
+    details.append(description, price);
+
+    const status = document.createElement('p');
+    status.className = 'product-stock';
+    status.textContent = product.available
+      ? 'Freshly available · Please call to order'
+      : 'Currently out of stock · Please call for today’s selection';
+    const orderButton = document.createElement('button');
+    orderButton.className = 'button button-primary product-cta';
+    orderButton.type = 'button';
+    orderButton.dataset.orderProduct = product.id;
+    orderButton.textContent = product.available ? 'Order by phone · 9345065011 →' : 'See today’s availability →';
+    card.append(details, status, orderButton);
+    productList.appendChild(card);
   }
 }
 
-function applyProductAvailability(available) {
-  const dialog = document.getElementById('orderDialog');
-  const status = document.getElementById('productStock');
-  const button = document.getElementById('orderProduct');
-  dialog.dataset.available = String(available);
-  status.textContent = available
-    ? 'Freshly available · Please call to order'
-    : 'Currently out of stock · Please call for today’s selection';
-  button.textContent = available ? 'Order by phone · 9345065011' : 'See today’s availability';
-  const arrow = document.createElement('span');
-  arrow.setAttribute('aria-hidden', 'true');
-  arrow.textContent = '→';
-  button.appendChild(arrow);
-  button.disabled = false;
-  document.getElementById('custardProduct').classList.toggle('is-unavailable', !available);
+async function loadProducts() {
+  try {
+    const response = await fetch('/api/products');
+    const data = await response.json();
+    if (!response.ok || !Array.isArray(data.products)) {
+      throw new Error(data.error || 'The menu is unavailable.');
+    }
+    storefrontProducts = data.products;
+    renderProducts();
+  } catch (error) {
+    productList.textContent = 'We could not load today’s menu. Please call us to check what is available.';
+    console.error('Unable to load products:', error);
+  }
 }
 document.getElementById('copyPass').addEventListener('click', async (event) => {
   const url = new URL('/', window.location.origin);
@@ -472,8 +548,12 @@ if (updates) {
       loadShopLocation();
       return;
     }
+    if (event.data?.type === 'product-catalog') {
+      loadProducts();
+      return;
+    }
     if (event.data?.type === 'product-availability' && typeof event.data.available === 'boolean') {
-      applyProductAvailability(event.data.available);
+      loadProducts();
       return;
     }
     if (event.data?.phone === activePhone) fetchWallet({ silent: true, phoneOverride: activePhone });
@@ -481,13 +561,9 @@ if (updates) {
 }
 
 window.addEventListener('storage', (event) => {
+  if (event.key === 'inkaniProductCatalogUpdated' && event.newValue) loadProducts();
   if (event.key === 'inkaniProductAvailabilityUpdated' && event.newValue) {
-    try {
-      const update = JSON.parse(event.newValue);
-      if (typeof update.available === 'boolean') applyProductAvailability(update.available);
-    } catch (error) {
-      console.error('Unable to read product availability update:', error);
-    }
+    loadProducts();
   }
   if (event.key === 'inkaniRewardUpdated' && event.newValue) {
     try {
@@ -501,7 +577,7 @@ window.addEventListener('storage', (event) => {
 });
 
 window.setInterval(() => {
-  if (document.visibilityState === 'visible') loadProductAvailability();
+  if (document.visibilityState === 'visible') loadProducts();
   if (document.visibilityState === 'visible') loadShopLocation();
   if (activePhone && document.visibilityState === 'visible') {
     fetchWallet({ silent: true, phoneOverride: activePhone });
@@ -532,7 +608,7 @@ if (initialPhone && normalizedPhone(initialPhone)) {
     console.error('Unable to restore the remembered rewards phone number:', error);
   }
 }
-loadProductAvailability();
+loadProducts();
 loadShopLocation();
 loadReviews();
 

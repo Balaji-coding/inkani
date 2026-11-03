@@ -12,7 +12,8 @@ A responsive customer loyalty wallet and cashier counter for the Inkani Bites re
 1. Install dependencies with `npm install`.
 2. Copy `.env.example` to `.env`.
 3. Replace `<db_password>` in `MONGO_URI` with the URL-encoded password for the Atlas database user, and replace `CASHIER_PIN` with a private team PIN. `MONGO_URL` is also accepted as an alias. The app requires this Atlas URI and will not fall back to a local database.
-4. Start the website with `npm start` (or `npm run dev` during development).
+4. Set `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, and `CLOUDINARY_API_SECRET` from your Cloudinary account to enable product image uploads. Existing lowercase `cloudinary_cloud_name`, `cloudinary_api_key`, and `cloudinary_api_secret` names are also accepted. Configure these values in your host's environment settings rather than committing them.
+5. Start the website with `npm start` (or `npm run dev` during development).
 5. Visit `http://localhost:10000` (or the port set in `PORT`). The team counter is at `http://localhost:10000/cashier.html`.
 
 The server deliberately will not start without `CASHIER_PIN` or a configured Atlas `MONGO_URI`. Do not use a public or default PIN in production. Configure the environment variables in your hosting provider rather than committing a `.env` file. Use HTTPS in production to encrypt the PIN in transit.
@@ -36,8 +37,12 @@ Each cashier visit adds one stamp. Every five stamps unlock one free fruit custa
 - `POST /api/cashier/store-location` — update `{ "address": "...", "mapsUrl": "https://www.google.com/maps/...", "pin": "..." }`.
 - `GET /api/products/custard-fruit-salad` — read the storefront stock status.
 - `POST /api/cashier/product-availability` — set `{ "available": true, "pin": "..." }` to manage the product's storefront status.
+- `GET /api/products` — retrieve the customer-facing product catalog, including descriptions and availability.
+- `POST /api/cashier/products` — create a product with multipart fields `name`, `price`, `description`, `available`, and optional `image` file, authenticated with the `X-Cashier-PIN` header. The response includes the product's Cloudinary HTTPS image URL in `imagePath`.
+- `PUT /api/cashier/products/:id` — update an existing product with the same fields.
+- `DELETE /api/cashier/products/:id` — delete a product using `{ "pin": "..." }`.
 
-The cashier can optionally record a customer name and purchased items with a visit. The customer rewards pass displays the name and recent visit and purchase details. Pass-open counts are available in the cashier's customer verification section; automatic balance refreshes do not increment the count. The cashier can also activate or deactivate the Custard Fruit Salad listing; the customer page reflects the stock status and provides the store phone number for ordering.
+Products are stored in their own MongoDB collection through the `Product` model. The cashier can create, edit, and delete products, including descriptions, optional offer badge text (up to 40 characters), prices, availability, and optional PNG/JPEG/WebP images up to 10 MB. Offer text such as `10% OFF` or `LIMITED OFFER` appears as a corner ribbon on the customer product image; it is a promotional label and does not automatically change the listed price. Multer keeps uploads in memory and streams them to Cloudinary; MongoDB stores each secure image URL and Cloudinary public ID. The customer menu displays the saved Cloudinary URL. Existing product records in storefront settings are migrated to the product collection when the menu is first requested. The customer menu reflects product changes immediately and provides the store phone number for ordering. The existing Custard Fruit Salad listing starts with the description `payaya+pinapple+banana+apple+custard cream+dates +tooty fruity included net weight 250g`. The cashier can optionally record a customer name and purchased items with a visit. The customer rewards pass displays the name and recent visit and purchase details. Pass-open counts are available in the cashier's customer verification section; automatic balance refreshes do not increment the count.
 
 The customer page displays the cart's current address and a Google Maps directions link. Cashiers can update both from the Shop location section using the team PIN whenever the cart moves.
 

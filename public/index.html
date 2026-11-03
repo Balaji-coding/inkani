@@ -10,8 +10,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,500;0,600;1,500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/styles.css?v=32">
-  <script src="/app.js?v=20" defer></script>
+  <link rel="stylesheet" href="/styles.css?v=37">
+  <script src="/app.js?v=25" defer></script>
 </head>
 <body>
   <a class="skip-link" href="#main-content">Skip to content</a>
@@ -84,20 +84,11 @@
 
     <section class="products-section" aria-labelledby="productsTitle">
       <div class="products-intro reveal">
-        <div class="eyebrow"><span class="eyebrow-line"></span> A LITTLE SOMETHING DELICIOUS</div>
-        <h2 id="productsTitle">A sweet reason<br><em>to come back.</em></h2>
-        <p>Make your next visit a little brighter with a bowl made for sharing—or savouring all to yourself.</p>
+        <div class="eyebrow"><span class="eyebrow-line"></span> THE INKANI BITES MENU</div>
+        <h2 id="productsTitle">Made fresh.<br><em>Made to love.</em></h2>
+        <p>Explore the menu, find a new favourite, and see what’s freshly available today.</p>
       </div>
-      <article class="product-card reveal" id="custardProduct">
-        <div class="product-image-wrap">
-          <img src="/asserts/custard-fruit-salad.png" alt="Fresh fruit salad served in creamy custard">
-          <span class="product-image-badge">A CUSTOMER FAVOURITE</span>
-          <div class="product-image-shine"></div>
-        </div>
-        <div class="product-details"><div><span class="product-category">FRESH · CREAMY · MADE WITH LOVE</span><h3>Custard Fruit Salad</h3><p>A colourful medley of fruit folded into smooth, creamy custard.</p></div><span class="product-price">₹60</span></div>
-        <p class="product-stock" id="productStock" aria-live="polite">Checking availability…</p>
-        <button class="button button-primary product-cta" id="orderProduct" type="button" disabled>Checking availability…</button>
-      </article>
+      <div class="product-list" id="productList" aria-live="polite"><p class="products-loading">Loading today’s menu…</p></div>
     </section>
 
     <section class="wallet-section" id="wallet">

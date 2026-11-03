@@ -9,8 +9,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/styles.css?v=20">
-  <script src="/cashier.js?v=12" defer></script>
+  <link rel="stylesheet" href="/styles.css?v=25">
+  <script src="/cashier.js?v=21" defer></script>
 </head>
 <body class="cashier-page">
   <a class="skip-link" href="#main-content">Skip to content</a>
@@ -63,24 +63,37 @@
         <p class="counter-footnote">Five visits unlock one free fruit custard.</p>
       </section>
 
-      <section class="cashier-card availability-card" aria-labelledby="availabilityTitle">
-        <div class="availability-control">
-          <div class="availability-heading"><span class="counter-mark">✳</span><span><strong id="availabilityTitle">Custard Fruit Salad</strong><small>Storefront availability</small></span><span class="availability-status" id="availabilityStatus">Loading…</span></div>
-          <div class="availability-fields">
-            <div><label class="availability-select-label" for="productAvailability">Product status</label>
-              <select id="productAvailability" class="pin-input" disabled>
-                <option value="true">Active — available to order</option>
-                <option value="false">Inactive — currently out of stock</option>
-              </select>
-            </div>
-            <div><label class="availability-select-label" for="availabilityPin">Team PIN to confirm this change</label>
-              <input id="availabilityPin" class="pin-input" type="password" inputmode="numeric" autocomplete="current-password" placeholder="Enter your team PIN">
-            </div>
+      <section class="cashier-card product-admin-card" aria-labelledby="productAdminTitle">
+        <div class="counter-card-heading"><span class="counter-mark">✳</span><span><strong id="productAdminTitle">Products</strong><small>Create products or update the customer-facing menu.</small></span></div>
+        <div class="product-admin-list" id="productAdminList" aria-live="polite"><p>Loading products…</p></div>
+        <button class="button button-outline product-create-button" id="createProduct" type="button">Create a new product <span aria-hidden="true">＋</span></button>
+        <form class="product-editor hidden" id="productEditor">
+          <h3 id="productEditorTitle">Create a product</h3>
+          <label for="productName">Product name</label>
+          <input id="productName" class="pin-input" type="text" maxlength="80" required>
+          <label for="productPrice">Price</label>
+          <div class="bill-input"><span>₹</span><input id="productPrice" type="number" min="0" max="100000" step="0.01" required></div>
+          <label for="productDescription">Description</label>
+          <textarea id="productDescription" class="pin-input product-description-input" maxlength="500" rows="3" placeholder="Ingredients, serving size, or other product details"></textarea>
+          <label for="productOffer">Offer badge <span class="optional">(optional, e.g. 10% OFF or LIMITED OFFER)</span></label>
+          <input id="productOffer" class="pin-input" type="text" maxlength="40" placeholder="Enter offer text">
+          <label for="productImage">Product image <span class="optional">(optional, PNG/JPEG/WebP, up to 10 MB)</span></label>
+          <input id="productImage" class="pin-input product-image-input" type="file" accept="image/png,image/jpeg,image/webp">
+          <img class="product-image-preview hidden" id="productImagePreview" alt="Product image preview">
+          <label for="productAvailable">Product status</label>
+          <select id="productAvailable" class="pin-input">
+            <option value="true">Active — available</option>
+            <option value="false">Inactive — out of stock</option>
+          </select>
+          <label for="productPin">Team PIN</label>
+          <input id="productPin" class="pin-input" type="password" inputmode="numeric" autocomplete="current-password" required placeholder="Enter your team PIN">
+          <div class="product-editor-actions">
+            <button class="button button-primary" id="saveProduct" type="submit">Save product <span aria-hidden="true">→</span></button>
+            <button class="button button-outline" id="cancelProductEdit" type="button">Cancel</button>
+            <button class="button button-outline product-delete-button hidden" id="deleteProduct" type="button">Delete product</button>
           </div>
-          <button class="button button-outline availability-save" id="saveAvailability" type="button" disabled>Update product status <span aria-hidden="true">→</span></button>
-          <p class="availability-help">This change applies to the customer product card immediately.</p>
-          <p class="counter-result hidden" id="availabilityResult" role="status" aria-live="polite"></p>
-        </div>
+          <p class="counter-result hidden" id="productResult" role="status" aria-live="polite"></p>
+        </form>
       </section>
 
       <section class="cashier-card location-admin-card" aria-labelledby="locationAdminTitle">

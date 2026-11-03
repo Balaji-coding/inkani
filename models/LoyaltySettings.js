@@ -9,6 +9,10 @@ const loyaltySettingsSchema = new mongoose.Schema({
     type: Boolean,
     default: true
   },
+  productCatalogMigrated: {
+    type: Boolean,
+    default: false
+  },
   shopAddress: {
     type: String,
     default: 'Teppakulam, Madurai, Tamil Nadu 625009',
