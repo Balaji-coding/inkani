@@ -486,7 +486,10 @@ function renderProducts() {
     category.className = 'product-category';
     category.textContent = 'FRESH · MADE WITH LOVE';
     const name = document.createElement('h3');
-    name.textContent = product.name;
+    const productLink = document.createElement('a');
+    productLink.href = `/menu/${encodeURIComponent(product.id)}`;
+    productLink.textContent = product.name;
+    name.appendChild(productLink);
     const productDescription = document.createElement('p');
     productDescription.textContent = product.description || 'Freshly made with care.';
     const price = document.createElement('span');
