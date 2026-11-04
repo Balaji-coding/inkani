@@ -30,7 +30,7 @@ const DEFAULT_PRODUCTS = [{
   id: 'custard-fruit-salad',
   name: 'Custard Fruit Salad',
   price: 60,
-  description: 'payaya+pinapple+banana+apple+custard cream+dates +tooty fruity included net weight 250g',
+  description: 'Papaya, pineapple, banana and apple with custard cream, dates, and tutti frutti. Net weight 250 g.',
   imagePath: '/asserts/custard-fruit-salad.png',
   available: true
 }];
@@ -106,7 +106,7 @@ app.get('/llms.txt', async (req, res, next) => {
   try {
     const products = await loadStorefrontProducts();
     const productLinks = products.length
-      ? products.map((product) => `- [${product.name}](${productPageUrl(product.id)}): ${product.description || 'Freshly made with care.'} Price: ${new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 2 }).format(product.price)}. ${product.available ? 'Available' : 'Currently out of stock'}.`).join('\n')
+      ? products.map((product) => `- [${formatProductName(product.name)}](${productPageUrl(product.id)}): ${formatProductDescription(product.description)} Price: ${new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 2 }).format(product.price)}. ${product.available ? 'Available' : 'Currently out of stock'}.`).join('\n')
       : '- No menu items are listed right now.';
     res.type('text/plain');
     return res.send(`# Inkani Bites\n\n> Inkani Bites is a moving street food cart in Madurai, Tamil Nadu, serving fruit custard, desserts, snacks, and shakes.\n\nUse the official website for current menu and availability information. The cart location can change, so check the live location and Google Maps directions before visiting. Online ordering is not available; call +91 93450 65011 to ask about the menu or place a phone order.\n\n## Current menu\n\n${productLinks}\n\n## Customer information\n\n- [Official website and live menu](${PUBLIC_SITE_URL}/)\n- [Instagram: @inkanibites](https://www.instagram.com/inkanibites/)\n- [Current cart location](${PUBLIC_SITE_URL}/#location)\n- [Rewards pass](${PUBLIC_SITE_URL}/#wallet): collect five visits to unlock one complimentary fruit custard.\n\n## Notes\n\n- Product names, descriptions, prices, stock, and cart location may change. The live website is the source of truth.\n- The customer rewards pass uses a mobile number. Do not request or expose customers' personal rewards data.\n- The cashier page and API are for authorized staff; they are not public customer information.\n`);
@@ -140,8 +140,9 @@ app.get('/menu/:productId', async (req, res, next) => {
     if (!product) return res.status(404).send('Product not found.');
 
     const template = await fs.readFile(path.join(__dirname, 'views', 'product.html'), 'utf8');
-    const imagePath = getPublicProductImage(product.imagePath);
+    const imagePath = getOptimizedProductImage(product.imagePath);
     const absoluteImage = imagePath ? new URL(imagePath, `${PUBLIC_SITE_URL}/`).href : '';
+    const productName = formatProductName(product.name);
     const availability = product.available ? 'InStock' : 'OutOfStock';
     const price = new Intl.NumberFormat('en-IN', {
       style: 'currency',
@@ -149,11 +150,15 @@ app.get('/menu/:productId', async (req, res, next) => {
       maximumFractionDigits: 2
     }).format(product.price);
     const pageUrl = productPageUrl(product.id);
-    const description = product.description || `Discover ${product.name} at Inkani Bites in Madurai.`;
+    const description = `${formatProductDescription(product.description)} Available at Inkani Bites in Madurai.`;
+    const metaDescription = formatProductMetaDescription(
+      productName,
+      formatProductDescription(product.description)
+    );
     const schema = {
       '@context': 'https://schema.org',
       '@type': 'Product',
-      name: product.name,
+      name: productName,
       description,
       ...(absoluteImage ? { image: absoluteImage } : {}),
       brand: { '@type': 'Brand', name: 'Inkani Bites' },
@@ -169,12 +174,13 @@ app.get('/menu/:productId', async (req, res, next) => {
     const replacements = {
       __PUBLIC_SITE_URL__: PUBLIC_SITE_URL,
       __PRODUCT_URL__: pageUrl,
-      __PRODUCT_NAME__: escapeHtml(product.name),
+      __PRODUCT_NAME__: escapeHtml(productName),
       __PRODUCT_DESCRIPTION__: escapeHtml(description),
+      __PRODUCT_META_DESCRIPTION__: escapeHtml(metaDescription),
       __PRODUCT_IMAGE__: escapeHtml(absoluteImage || `${PUBLIC_SITE_URL}/asserts/inkani-share-card.png`),
-      __PRODUCT_IMAGE_ALT__: escapeHtml(product.name),
+      __PRODUCT_IMAGE_ALT__: escapeHtml(getProductImageAlt(product)),
       __PRODUCT_IMAGE_MARKUP__: absoluteImage
-        ? `<img src="${escapeHtml(absoluteImage)}" alt="${escapeHtml(product.name)}" width="1200" height="900">`
+        ? `<img src="${escapeHtml(absoluteImage)}" alt="${escapeHtml(getProductImageAlt(product))}" width="1200" height="900" fetchpriority="high" decoding="async">`
         : '<span aria-hidden="true">✳</span>',
       __PRODUCT_PRICE__: escapeHtml(price),
       __PRODUCT_AVAILABILITY__: product.available ? 'Available today' : 'Currently out of stock',
@@ -297,6 +303,7 @@ async function ensureProductCollectionSeeded() {
               price: product.price,
               description: product.description || '',
               imagePath,
+              imageAlt: product.imageAlt || '',
               available: product.available ?? settings?.custardFruitSaladAvailable ?? true
             } },
           { upsert: true, runValidators: true }
@@ -356,14 +363,56 @@ function getPublicProductImage(imagePath) {
   return '';
 }
 
+function getOptimizedProductImage(imagePath) {
+  const publicImagePath = getPublicProductImage(imagePath);
+  if (!publicImagePath.startsWith('https://res.cloudinary.com/')) return publicImagePath;
+  return publicImagePath.replace('/image/upload/', '/image/upload/f_auto,q_auto:good,w_1200/');
+}
+
+function getProductImageAlt(product) {
+  return typeof product.imageAlt === 'string' && product.imageAlt.trim()
+    ? product.imageAlt.trim()
+    : `Photo of ${product.name} from Inkani Bites in Madurai.`;
+}
+
+function formatProductName(name) {
+  return name.replace(/\b[a-z]/g, (letter) => letter.toUpperCase());
+}
+
+function formatProductDescription(description) {
+  if (typeof description !== 'string' || !description.trim()) return 'Freshly made with care.';
+  const isIngredientList = /\s*\+\s*/.test(description);
+  const formatted = description.trim()
+    .replace(/\s*\+\s*/g, ', ')
+    .replace(/\bpayaya\b/gi, 'papaya')
+    .replace(/\bpinapple\b/gi, 'pineapple')
+    .replace(/\btooty fruity\b/gi, 'tutti frutti')
+    .replace(/\bcerry\b/gi, 'cherry')
+    .replace(/\bincluded\s+net\s+weight\b/gi, '· Net weight')
+    .replace(/\s+,/g, ',')
+    .replace(/\s{2,}/g, ' ');
+  const sentence = formatted.charAt(0).toUpperCase() + formatted.slice(1);
+  const descriptionText = /[.!?]$/.test(sentence) ? sentence : `${sentence}.`;
+  return isIngredientList ? `Ingredients: ${descriptionText}` : descriptionText;
+}
+
+function formatProductMetaDescription(productName, description) {
+  const text = `Try ${productName} at Inkani Bites in Madurai. ${description}`;
+  if (text.length <= 160) return text;
+  const truncated = text.slice(0, 159);
+  const lastSpace = truncated.lastIndexOf(' ');
+  return `${truncated.slice(0, lastSpace > 96 ? lastSpace : truncated.length).trimEnd()}…`;
+}
+
 function renderStorefrontMenu(products) {
   if (!products.length) {
     return '<p class="products-loading">There are no products on today’s menu yet.</p>';
   }
   return products.map((product) => {
-    const imagePath = getPublicProductImage(product.imagePath);
+    const imagePath = getOptimizedProductImage(product.imagePath);
+    const productName = formatProductName(product.name);
     const imageMarkup = imagePath
-      ? `<img src="${escapeHtml(imagePath)}" alt="${escapeHtml(product.name)}" loading="lazy" decoding="async">`
+      ? `<img src="${escapeHtml(imagePath)}" alt="${escapeHtml(getProductImageAlt(product))}" loading="lazy" decoding="async">`
       : '<span class="product-image-placeholder" aria-hidden="true">✳</span>';
     const favouriteBadge = product.id === 'custard-fruit-salad'
       ? '<span class="product-image-badge">A CUSTOMER FAVOURITE</span>'
@@ -384,7 +433,7 @@ function renderStorefrontMenu(products) {
       : 'See today’s availability →';
     return `<article class="product-card reveal${product.available ? '' : ' is-unavailable'}">
       <div class="product-image-wrap${imagePath ? '' : ' is-placeholder'}">${imageMarkup}<div class="product-image-shine"></div>${favouriteBadge}${offer}</div>
-      <div class="product-details"><div><span class="product-category">FRESH · MADE WITH LOVE</span><h3><a href="/menu/${escapeHtml(encodeURIComponent(product.id))}">${escapeHtml(product.name)}</a></h3><p>${escapeHtml(product.description || 'Freshly made with care.')}</p></div><span class="product-price">${escapeHtml(price)}</span></div>
+      <div class="product-details"><div><span class="product-category">FRESH · MADE WITH LOVE</span><h3><a href="/menu/${escapeHtml(encodeURIComponent(product.id))}">${escapeHtml(productName)}</a></h3><p>${escapeHtml(formatProductDescription(product.description))}</p></div><span class="product-price">${escapeHtml(price)}</span></div>
       <p class="product-stock">${availability}</p>
       <button class="button button-primary product-cta" type="button" data-order-product="${escapeHtml(product.id)}">${buttonText}</button>
     </article>`;
@@ -398,15 +447,16 @@ function renderStorefrontMenuSchema(products) {
     '@type': 'ItemList',
     name: 'Inkani Bites menu',
     itemListElement: products.map((product, index) => {
-      const imagePath = getPublicProductImage(product.imagePath);
+      const imagePath = getOptimizedProductImage(product.imagePath);
+      const productName = formatProductName(product.name);
       return {
         '@type': 'ListItem',
         position: index + 1,
         item: {
           '@type': 'MenuItem',
           url: productPageUrl(product.id),
-          name: product.name,
-          description: product.description || 'Freshly made with care.',
+          name: productName,
+          description: formatProductDescription(product.description),
           ...(imagePath ? { image: new URL(imagePath, `${PUBLIC_SITE_URL}/`).href } : {}),
           offers: {
             '@type': 'Offer',
@@ -434,6 +484,10 @@ function validateProductInput(body) {
     return { error: 'Product description must be text.' };
   }
   const description = typeof body.description === 'string' ? body.description.trim() : '';
+  if (body.imageAlt !== undefined && typeof body.imageAlt !== 'string') {
+    return { error: 'Product image alt text must be text.' };
+  }
+  const imageAlt = typeof body.imageAlt === 'string' ? body.imageAlt.trim() : '';
   if (body.offer !== undefined && typeof body.offer !== 'string') {
     return { error: 'Product offer must be text.' };
   }
@@ -451,8 +505,14 @@ function validateProductInput(body) {
   if (description.length > 500) {
     return { error: 'Product description must be 500 characters or fewer.' };
   }
+  if (description.length < 30) {
+    return { error: 'Product description must be at least 30 characters.' };
+  }
   if (offer.length > 40) {
     return { error: 'Product offer must be 40 characters or fewer.' };
+  }
+  if (imageAlt.length > 160) {
+    return { error: 'Product image alt text must be 160 characters or fewer.' };
   }
   if (body.available !== undefined && ![true, false, 'true', 'false'].includes(body.available)) {
     return { error: 'Choose whether the product is available.' };
@@ -472,8 +532,21 @@ function validateProductInput(body) {
       description,
       offer,
       imagePath,
+      imageAlt,
       available: body.available === undefined ? true : body.available === true || body.available === 'true'
     }
+  };
+}
+
+async function findProductContentConflict(product, excludedProductId = '') {
+  const query = excludedProductId ? { id: { $ne: excludedProductId } } : {};
+  const products = await Product.find(query).select('name description').lean();
+  const normalize = (value) => String(value || '').trim().replace(/\s+/g, ' ').toLowerCase();
+  const name = normalize(product.name);
+  const description = normalize(product.description);
+  return {
+    name: products.some((item) => normalize(item.name) === name),
+    description: products.some((item) => normalize(item.description) === description)
   };
 }
 
@@ -677,12 +750,25 @@ app.post('/api/cashier/products', requireCashierPin, receiveProductImage, async 
   if (validation.error) {
     return res.status(400).json({ error: validation.error });
   }
+  if (!req.file && !req.body.imageData && !validation.product.imagePath) {
+    return res.status(400).json({ error: 'Add a clear product photo before creating this menu item.' });
+  }
+  if (validation.product.imageAlt.length < 10) {
+    return res.status(400).json({ error: 'Describe the visible product photo in at least 10 characters.' });
+  }
 
   let uploadedImage;
   let uploadedImagePublicId;
   let productSaved = false;
   try {
     await ensureProductCollectionSeeded();
+    const conflict = await findProductContentConflict(validation.product);
+    if (conflict.name) {
+      return res.status(409).json({ error: 'Choose a product name that is not already on the menu.' });
+    }
+    if (conflict.description) {
+      return res.status(409).json({ error: 'Write a distinct description for this product.' });
+    }
     const image = await saveRequestProductImage(req);
     if (image?.error) return res.status(400).json({ error: image.error });
     uploadedImage = image?.imagePath;
@@ -724,6 +810,25 @@ app.put('/api/cashier/products/:id', requireCashierPin, receiveProductImage, asy
     const currentProduct = await Product.findOne({ id: req.params.id }).select('+imagePublicId').lean();
     if (!currentProduct) {
       return res.status(404).json({ error: 'Product not found.' });
+    }
+    const hasImage = Boolean(
+      req.file
+      || req.body.imageData
+      || validation.product.imagePath
+      || currentProduct.imagePath
+    );
+    if (!hasImage) {
+      return res.status(400).json({ error: 'Add a clear product photo before saving this menu item.' });
+    }
+    if (validation.product.imageAlt.length < 10) {
+      return res.status(400).json({ error: 'Describe the visible product photo in at least 10 characters.' });
+    }
+    const conflict = await findProductContentConflict(validation.product, req.params.id);
+    if (conflict.name) {
+      return res.status(409).json({ error: 'Choose a product name that is not already on the menu.' });
+    }
+    if (conflict.description) {
+      return res.status(409).json({ error: 'Write a distinct description for this product.' });
     }
     const image = await saveRequestProductImage(req);
     if (image?.error) return res.status(400).json({ error: image.error });

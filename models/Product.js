@@ -36,6 +36,12 @@ const productSchema = new mongoose.Schema({
     maxlength: 2000,
     default: ''
   },
+  imageAlt: {
+    type: String,
+    trim: true,
+    maxlength: 160,
+    default: ''
+  },
   imagePublicId: {
     type: String,
     trim: true,

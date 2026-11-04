@@ -10,7 +10,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/styles.css?v=25">
-  <script src="/cashier.js?v=21" defer></script>
+  <script src="/cashier.js?v=22" defer></script>
 </head>
 <body class="cashier-page">
   <a class="skip-link" href="#main-content">Skip to content</a>
@@ -74,12 +74,14 @@
           <label for="productPrice">Price</label>
           <div class="bill-input"><span>₹</span><input id="productPrice" type="number" min="0" max="100000" step="0.01" required></div>
           <label for="productDescription">Description</label>
-          <textarea id="productDescription" class="pin-input product-description-input" maxlength="500" rows="3" placeholder="Ingredients, serving size, or other product details"></textarea>
+          <textarea id="productDescription" class="pin-input product-description-input" minlength="30" maxlength="500" rows="3" required placeholder="Write a distinct, natural description with the ingredients, serving size, and what makes this item special."></textarea>
           <label for="productOffer">Offer badge <span class="optional">(optional, e.g. 10% OFF or LIMITED OFFER)</span></label>
           <input id="productOffer" class="pin-input" type="text" maxlength="40" placeholder="Enter offer text">
-          <label for="productImage">Product image <span class="optional">(optional, PNG/JPEG/WebP, up to 10 MB)</span></label>
+          <label for="productImage">Product image <span class="optional">(PNG/JPEG/WebP, up to 10 MB)</span></label>
           <input id="productImage" class="pin-input product-image-input" type="file" accept="image/png,image/jpeg,image/webp">
           <img class="product-image-preview hidden" id="productImagePreview" alt="Product image preview">
+          <label for="productImageAlt">Image description for screen readers and search</label>
+          <input id="productImageAlt" class="pin-input" type="text" maxlength="160" required placeholder="Describe what is actually visible in the product photo">
           <label for="productAvailable">Product status</label>
           <select id="productAvailable" class="pin-input">
             <option value="true">Active — available</option>

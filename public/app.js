@@ -26,6 +26,33 @@ const ratingCaptions = ['', 'We’re sorry it missed the mark.', 'There’s room
 const productList = document.getElementById('productList');
 let storefrontProducts = [];
 
+function formatProductName(name) {
+  return name.replace(/\b[a-z]/g, (letter) => letter.toUpperCase());
+}
+
+function formatProductDescription(description) {
+  if (typeof description !== 'string' || !description.trim()) return 'Freshly made with care.';
+  const isIngredientList = /\s*\+\s*/.test(description);
+  const formatted = description.trim()
+    .replace(/\s*\+\s*/g, ', ')
+    .replace(/\bpayaya\b/gi, 'papaya')
+    .replace(/\bpinapple\b/gi, 'pineapple')
+    .replace(/\btooty fruity\b/gi, 'tutti frutti')
+    .replace(/\bcerry\b/gi, 'cherry')
+    .replace(/\bincluded\s+net\s+weight\b/gi, '· Net weight')
+    .replace(/\s+,/g, ',')
+    .replace(/\s{2,}/g, ' ');
+  const sentence = formatted.charAt(0).toUpperCase() + formatted.slice(1);
+  const descriptionText = /[.!?]$/.test(sentence) ? sentence : `${sentence}.`;
+  return isIngredientList ? `Ingredients: ${descriptionText}` : descriptionText;
+}
+
+function optimizedProductImage(imagePath) {
+  return typeof imagePath === 'string' && imagePath.startsWith('https://res.cloudinary.com/')
+    ? imagePath.replace('/image/upload/', '/image/upload/f_auto,q_auto:good,w_1200/')
+    : imagePath;
+}
+
 function normalizedPhone(value) {
   const digits = value.replace(/\D/g, '');
   const phone = digits.length === 12 && digits.startsWith('91') ? digits.slice(2) : digits;
@@ -427,6 +454,7 @@ function renderProducts() {
     return;
   }
   for (const product of storefrontProducts) {
+    const productName = formatProductName(product.name);
     const card = document.createElement('article');
     card.className = `product-card reveal${product.available ? '' : ' is-unavailable'}`;
     const imageWrap = document.createElement('div');
@@ -441,8 +469,8 @@ function renderProducts() {
     };
     if (product.imagePath) {
       const image = document.createElement('img');
-      image.src = product.imagePath;
-      image.alt = product.name;
+      image.src = optimizedProductImage(product.imagePath);
+      image.alt = product.imageAlt || `Photo of ${productName} from Inkani Bites in Madurai.`;
       image.loading = 'lazy';
       image.decoding = 'async';
       let triedLegacyImage = false;
@@ -488,10 +516,10 @@ function renderProducts() {
     const name = document.createElement('h3');
     const productLink = document.createElement('a');
     productLink.href = `/menu/${encodeURIComponent(product.id)}`;
-    productLink.textContent = product.name;
+    productLink.textContent = productName;
     name.appendChild(productLink);
     const productDescription = document.createElement('p');
-    productDescription.textContent = product.description || 'Freshly made with care.';
+    productDescription.textContent = formatProductDescription(product.description);
     const price = document.createElement('span');
     price.className = 'product-price';
     price.textContent = new Intl.NumberFormat('en-IN', {

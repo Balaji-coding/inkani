@@ -22,6 +22,7 @@ const productDescriptionInput = document.getElementById('productDescription');
 const productOfferInput = document.getElementById('productOffer');
 const productImageInput = document.getElementById('productImage');
 const productImagePreview = document.getElementById('productImagePreview');
+const productImageAltInput = document.getElementById('productImageAlt');
 const productAvailableSelect = document.getElementById('productAvailable');
 const productPinInput = document.getElementById('productPin');
 const productResult = document.getElementById('productResult');
@@ -37,6 +38,12 @@ const saveLocationButton = document.getElementById('saveLocationButton');
 const rewardUpdates = typeof BroadcastChannel === 'function'
   ? new BroadcastChannel('inkani-rewards')
   : null;
+
+function optimizedProductImage(imagePath) {
+  return typeof imagePath === 'string' && imagePath.startsWith('https://res.cloudinary.com/')
+    ? imagePath.replace('/image/upload/', '/image/upload/f_auto,q_auto:good,w_1200/')
+    : imagePath;
+}
 
 function normalizedPhone(value) {
   const digits = value.replace(/\D/g, '');
@@ -217,7 +224,7 @@ function renderProductAdminList() {
     const summary = document.createElement('small');
     const edit = document.createElement('button');
     name.textContent = product.name;
-    summary.textContent = `₹${Number(product.price).toFixed(2)} · ${product.available ? 'Active' : 'Out of stock'}${product.offer ? ` · ${product.offer}` : ''} · ${product.imagePath ? 'Image saved' : 'No image'}`;
+    summary.textContent = `₹${Number(product.price).toFixed(2)} · ${product.available ? 'Active' : 'Out of stock'}${product.offer ? ` · ${product.offer}` : ''} · ${product.imagePath ? 'Image saved' : 'No image'}${product.imageAlt ? ' · Alt text saved' : ' · Add image alt text'}`;
     details.append(name, summary);
     edit.className = 'button button-outline';
     edit.type = 'button';
@@ -249,9 +256,10 @@ function startProductEdit(product = null) {
   productPriceInput.value = product ? String(product.price) : '';
   productDescriptionInput.value = product?.description || '';
   productOfferInput.value = product?.offer || '';
+  productImageAltInput.value = product?.imageAlt || '';
   productImageInput.value = '';
   productImagePath = product?.imagePath || (product?.id === 'custard-fruit-salad' ? '/asserts/custard-fruit-salad.png' : '');
-  productImagePreview.src = productImagePath;
+  productImagePreview.src = optimizedProductImage(productImagePath);
   productImagePreview.classList.toggle('hidden', !productImagePath);
   productAvailableSelect.value = String(product?.available ?? true);
   document.getElementById('deleteProduct').classList.toggle('hidden', !product);
@@ -311,6 +319,18 @@ async function saveProduct(event) {
   saveButton.disabled = true;
   try {
     const imageFile = productImageInput.files[0];
+    if (!editingProductId && !imageFile && !productImagePath) {
+      throw new Error('Add a clear product photo before creating this menu item.');
+    }
+    if (!imageFile && !productImagePath) {
+      throw new Error('Add a clear product photo before saving this menu item.');
+    }
+    if (productImageAltInput.value.trim().length < 10) {
+      throw new Error('Describe the visible product photo in at least 10 characters.');
+    }
+    if (productDescriptionInput.value.trim().length < 30) {
+      throw new Error('Write a distinct product description in at least 30 characters.');
+    }
     if (imageFile) {
       if (imageFile.size > 10 * 1024 * 1024) {
         throw new Error('Image must be no larger than 10 MB.');
@@ -324,6 +344,7 @@ async function saveProduct(event) {
     formData.append('price', productPriceInput.value);
     formData.append('description', productDescriptionInput.value.trim());
     formData.append('offer', productOfferInput.value.trim());
+    formData.append('imageAlt', productImageAltInput.value.trim());
     formData.append('imagePath', productImagePath);
     formData.append('available', productAvailableSelect.value);
     if (imageFile) formData.append('image', imageFile);
@@ -437,7 +458,7 @@ document.getElementById('cancelProductEdit').addEventListener('click', () => {
 productImageInput.addEventListener('change', () => {
   const imageFile = productImageInput.files[0];
   if (!imageFile) {
-    productImagePreview.src = productImagePath;
+    productImagePreview.src = optimizedProductImage(productImagePath);
     productImagePreview.classList.toggle('hidden', !productImagePath);
     return;
   }
@@ -447,7 +468,7 @@ productImageInput.addEventListener('change', () => {
       ? 'Image must be no larger than 10 MB.'
       : 'Upload a PNG, JPEG, or WebP image.';
     productResult.className = 'counter-result failure';
-    productImagePreview.src = productImagePath;
+    productImagePreview.src = optimizedProductImage(productImagePath);
     productImagePreview.classList.toggle('hidden', !productImagePath);
     return;
   }
