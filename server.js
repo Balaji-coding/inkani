@@ -17,6 +17,15 @@ const CASHIER_PIN = process.env.CASHIER_PIN;
 const PUBLIC_SITE_URL = new URL(process.env.PUBLIC_SITE_URL || 'https://inkani.onrender.com').origin;
 const DEFAULT_SHOP_ADDRESS = 'Teppakulam, Madurai, Tamil Nadu 625009';
 const DEFAULT_SHOP_MAPS_URL = 'https://www.google.com/maps/place/9%C2%B054\'42.2%22N+78%C2%B008\'53.1%22E/@9.9117149,78.1471646,18z/data=!3m1!4b1!4m13!1m8!3m7!1s0x3b00c50726b72ae3:0xe013610ff6d4b0d6!2sTeppakulam,+Madurai,+Tamil+Nadu+625009!3b1!8m2!3d9.9114761!4d78.1498516!16s%2Fg%2F11gjw_8qy3!3m3!8m2!3d9.911713!4d78.148075?entry=ttu&g_ep=EgoyMDI2MTAyMC4wIKXMDSoASAFQAw%3D%3D';
+
+async function loadCurrentShopLocation() {
+  const settings = await LoyaltySettings.findById('storefront').lean();
+  return {
+    address: settings?.shopAddress || DEFAULT_SHOP_ADDRESS,
+    mapsUrl: settings?.shopMapsUrl || DEFAULT_SHOP_MAPS_URL
+  };
+}
+
 const cloudinaryCredentials = {
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME || process.env.cloudinary_cloud_name,
   api_key: process.env.CLOUDINARY_API_KEY || process.env.cloudinary_api_key,
@@ -64,6 +73,18 @@ app.get('/health', (req, res) => {
 app.get('/robots.txt', (req, res) => {
   res.type('text/plain');
   return res.send([
+    '# Google Search and Gemini grounding.',
+    'User-agent: Googlebot',
+    'Allow: /',
+    'Disallow: /api/',
+    'Disallow: /cashier.html',
+    '',
+    'User-agent: Googlebot-Image',
+    'Allow: /',
+    '',
+    'User-agent: Google-Extended',
+    'Allow: /',
+    '',
     '# Search crawlers used by ChatGPT Search and Perplexity.',
     'User-agent: OAI-SearchBot',
     'Allow: /',
@@ -88,44 +109,61 @@ app.get('/sitemap.xml', async (req, res, next) => {
   try {
     const products = await loadStorefrontProducts();
     const urls = [
-      `<url><loc>${xmlEscape(`${PUBLIC_SITE_URL}/`)}</loc></url>`,
+      `<url><loc>${xmlEscape(`${PUBLIC_SITE_URL}/`)}</loc><image:image><image:loc>${xmlEscape(`${PUBLIC_SITE_URL}/asserts/inkani-hero.jpg`)}</image:loc><image:title>Inkani Bites desserts and snacks in Madurai</image:title></image:image></url>`,
       ...products.map((product) => {
         const lastmod = product.updatedAt instanceof Date
           ? `<lastmod>${product.updatedAt.toISOString()}</lastmod>`
           : '';
-        return `<url><loc>${xmlEscape(productPageUrl(product.id))}</loc>${lastmod}</url>`;
+        const imagePath = getOptimizedProductImage(product.imagePath);
+        const image = imagePath
+          ? `<image:image><image:loc>${xmlEscape(new URL(imagePath, `${PUBLIC_SITE_URL}/`).href)}</image:loc><image:title>${xmlEscape(formatProductName(product.name))}</image:title><image:caption>${xmlEscape(getProductImageAlt(product))}</image:caption></image:image>`
+          : '';
+        return `<url><loc>${xmlEscape(productPageUrl(product.id))}</loc>${lastmod}${image}</url>`;
       })
     ];
     res.type('application/xml');
-    return res.send(`<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">${urls.join('')}</urlset>`);
+    return res.send(`<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">${urls.join('')}</urlset>`);
   } catch (error) {
     return next(error);
   }
 });
 app.get('/llms.txt', async (req, res, next) => {
   try {
-    const products = await loadStorefrontProducts();
+    const [products, location] = await Promise.all([
+      loadStorefrontProducts(),
+      loadCurrentShopLocation()
+    ]);
     const productLinks = products.length
       ? products.map((product) => `- [${formatProductName(product.name)}](${productPageUrl(product.id)}): ${formatProductDescription(product.description)} Price: ${new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 2 }).format(product.price)}. ${product.available ? 'Available' : 'Currently out of stock'}.`).join('\n')
       : '- No menu items are listed right now.';
     res.type('text/plain');
-    return res.send(`# Inkani Bites\n\n> Inkani Bites is a moving street food cart in Madurai, Tamil Nadu, serving fruit custard, desserts, snacks, and shakes.\n\nUse the official website for current menu and availability information. The cart location can change, so check the live location and Google Maps directions before visiting. Online ordering is not available; call +91 93450 65011 to ask about the menu or place a phone order.\n\n## Current menu\n\n${productLinks}\n\n## Customer information\n\n- [Official website and live menu](${PUBLIC_SITE_URL}/)\n- [Instagram: @inkanibites](https://www.instagram.com/inkanibites/)\n- [Current cart location](${PUBLIC_SITE_URL}/#location)\n- [Rewards pass](${PUBLIC_SITE_URL}/#wallet): collect five visits to unlock one complimentary fruit custard.\n\n## Notes\n\n- Product names, descriptions, prices, stock, and cart location may change. The live website is the source of truth.\n- The customer rewards pass uses a mobile number. Do not request or expose customers' personal rewards data.\n- The cashier page and API are for authorized staff; they are not public customer information.\n`);
+    return res.send(`# Inkani Bites\n\n> Inkani Bites is a moving street food cart in Madurai, Tamil Nadu, serving tasty fruit custard, fresh fruit salads, desserts, snacks, and shakes with hygienic preparation and caring service.\n\nInkani Bites serves Madurai with freshly prepared fruit custard and fruit salads, handled hygienically and made with care. Advance bulk orders are available for parties, weddings, family functions, and other events. Delivery can be arranged for bulk orders; call +91 93450 65011 with the date, quantity, and delivery location to confirm availability, service area, and charges. The cart is currently listed at ${location.address}. As this is a moving cart, check the [latest location and map](${location.mapsUrl}) before visiting. Online ordering is not available.\n\n## Current menu\n\n${productLinks}\n\n## Customer information\n\n- [Official website and live menu](${PUBLIC_SITE_URL}/)\n- [Instagram: @inkanibites](https://www.instagram.com/inkanibites/)\n- [Current cart location and map](${location.mapsUrl})\n- [Rewards pass](${PUBLIC_SITE_URL}/#wallet): collect five visits to unlock one complimentary fruit custard.\n- Phone: +91 93450 65011 for menu questions, regular orders, and event bulk orders.\n\n## Notes\n\n- Product names, descriptions, prices, stock, and cart location may change. The live website is the source of truth.\n- The customer rewards pass uses a mobile number. Do not request or expose customers' personal rewards data.\n- The cashier page and API are for authorized staff; they are not public customer information.\n`);
   } catch (error) {
     return next(error);
   }
 });
 app.get('/', async (req, res, next) => {
   try {
-    const [html, products] = await Promise.all([
+    const [html, products, location] = await Promise.all([
       fs.readFile(path.join(__dirname, 'public', 'index.html'), 'utf8'),
-      loadStorefrontProducts()
+      loadStorefrontProducts(),
+      loadCurrentShopLocation()
     ]);
     const menuItems = renderStorefrontMenu(products);
     const menuSchema = renderStorefrontMenuSchema(products);
+    const locationSchema = JSON.stringify({
+      '@type': 'Place',
+      name: 'Current Inkani Bites cart location',
+      address: location.address,
+      hasMap: location.mapsUrl
+    }).replace(/</g, '\\u003c');
     res.set('Cache-Control', 'no-cache');
     return res.type('html').send(
       html
         .replaceAll('__PUBLIC_SITE_URL__', PUBLIC_SITE_URL)
+        .replaceAll('__CURRENT_SHOP_ADDRESS__', escapeHtml(location.address))
+        .replaceAll('__CURRENT_SHOP_MAPS_URL__', escapeHtml(location.mapsUrl))
+        .replace('__CURRENT_LOCATION_SCHEMA__', locationSchema)
         .replace('<!-- SEO:MENU_ITEMS -->', menuItems)
         .replace('<!-- SEO:MENU_SCHEMA -->', menuSchema)
     );
@@ -135,7 +173,10 @@ app.get('/', async (req, res, next) => {
 });
 app.get('/menu/:productId', async (req, res, next) => {
   try {
-    const products = await loadStorefrontProducts();
+    const [products, location] = await Promise.all([
+      loadStorefrontProducts(),
+      loadCurrentShopLocation()
+    ]);
     const product = products.find((item) => item.id === req.params.productId);
     if (!product) return res.status(404).send('Product not found.');
 
@@ -150,26 +191,60 @@ app.get('/menu/:productId', async (req, res, next) => {
       maximumFractionDigits: 2
     }).format(product.price);
     const pageUrl = productPageUrl(product.id);
-    const description = `${formatProductDescription(product.description)} Available at Inkani Bites in Madurai.`;
-    const metaDescription = formatProductMetaDescription(
-      productName,
-      formatProductDescription(product.description)
-    );
+    const description = `${formatProductDescription(product.description)} Available at Inkani Bites in Madurai, currently at ${location.address}. Freshly prepared with hygienic handling.`;
+    const metaDescription = formatProductMetaDescription(productName, location.address);
     const schema = {
       '@context': 'https://schema.org',
-      '@type': 'Product',
-      name: productName,
-      description,
-      ...(absoluteImage ? { image: absoluteImage } : {}),
-      brand: { '@type': 'Brand', name: 'Inkani Bites' },
-      offers: {
-        '@type': 'Offer',
-        url: pageUrl,
-        priceCurrency: 'INR',
-        price: product.price,
-        availability: `https://schema.org/${availability}`,
-        seller: { '@type': 'FoodEstablishment', name: 'Inkani Bites', url: `${PUBLIC_SITE_URL}/` }
-      }
+      '@graph': [
+        {
+          '@type': 'Product',
+          '@id': `${pageUrl}#product`,
+          mainEntityOfPage: pageUrl,
+          name: productName,
+          description,
+          ...(absoluteImage ? { image: [absoluteImage] } : {}),
+          sku: product.id,
+          brand: { '@type': 'Brand', name: 'Inkani Bites' },
+          offers: {
+            '@type': 'Offer',
+            url: pageUrl,
+            priceCurrency: 'INR',
+            price: product.price,
+            availability: `https://schema.org/${availability}`,
+            itemCondition: 'https://schema.org/NewCondition',
+            availableAtOrFrom: {
+              '@type': 'Place',
+              name: 'Current Inkani Bites cart location',
+              address: location.address,
+              hasMap: location.mapsUrl
+            },
+            seller: { '@id': `${PUBLIC_SITE_URL}/#organization` }
+          }
+        },
+        {
+          '@type': 'WebPage',
+          '@id': pageUrl,
+          url: pageUrl,
+          name: `${productName} in Madurai | Inkani Bites`,
+          inLanguage: 'en-IN',
+          mainEntity: { '@id': `${pageUrl}#product` },
+          ...(absoluteImage ? {
+            primaryImageOfPage: {
+              '@type': 'ImageObject',
+              contentUrl: absoluteImage,
+              caption: getProductImageAlt(product)
+            }
+          } : {})
+        },
+        {
+          '@type': 'BreadcrumbList',
+          itemListElement: [
+            { '@type': 'ListItem', position: 1, name: 'Inkani Bites', item: `${PUBLIC_SITE_URL}/` },
+            { '@type': 'ListItem', position: 2, name: 'Menu', item: `${PUBLIC_SITE_URL}/#menu` },
+            { '@type': 'ListItem', position: 3, name: productName, item: pageUrl }
+          ]
+        }
+      ]
     };
     const replacements = {
       __PUBLIC_SITE_URL__: PUBLIC_SITE_URL,
@@ -179,6 +254,10 @@ app.get('/menu/:productId', async (req, res, next) => {
       __PRODUCT_META_DESCRIPTION__: escapeHtml(metaDescription),
       __PRODUCT_IMAGE__: escapeHtml(absoluteImage || `${PUBLIC_SITE_URL}/asserts/inkani-share-card.png`),
       __PRODUCT_IMAGE_ALT__: escapeHtml(getProductImageAlt(product)),
+      __PRODUCT_PRICE_AMOUNT__: escapeHtml(Number(product.price).toFixed(2)),
+      __PRODUCT_AVAILABILITY_CODE__: product.available ? 'instock' : 'oos',
+      __CURRENT_SHOP_ADDRESS__: escapeHtml(location.address),
+      __CURRENT_SHOP_MAPS_URL__: escapeHtml(location.mapsUrl),
       __PRODUCT_IMAGE_MARKUP__: absoluteImage
         ? `<img src="${escapeHtml(absoluteImage)}" alt="${escapeHtml(getProductImageAlt(product))}" width="1200" height="900" fetchpriority="high" decoding="async">`
         : '<span aria-hidden="true">✳</span>',
@@ -396,8 +475,8 @@ function formatProductDescription(description) {
   return isIngredientList ? `Ingredients: ${descriptionText}` : descriptionText;
 }
 
-function formatProductMetaDescription(productName, description) {
-  const text = `Try ${productName} at Inkani Bites in Madurai. ${description}`;
+function formatProductMetaDescription(productName, locationAddress) {
+  const text = `Tasty ${productName} from Inkani Bites in Madurai. Freshly prepared with hygienic handling. Today's cart: ${locationAddress}.`;
   if (text.length <= 160) return text;
   const truncated = text.slice(0, 159);
   const lastSpace = truncated.lastIndexOf(' ');
@@ -667,11 +746,7 @@ function isGoogleMapsUrl(value) {
 
 app.get('/api/store-location', async (req, res, next) => {
   try {
-    const settings = await LoyaltySettings.findById('storefront').lean();
-    return res.json({
-      address: settings?.shopAddress || DEFAULT_SHOP_ADDRESS,
-      mapsUrl: settings?.shopMapsUrl || DEFAULT_SHOP_MAPS_URL
-    });
+    return res.json(await loadCurrentShopLocation());
   } catch (error) {
     return next(error);
   }

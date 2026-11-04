@@ -1,8 +1,8 @@
 # Inkani Bites
 
-> Inkani Bites is a moving street food cart in Madurai, Tamil Nadu, serving fruit custard, desserts, snacks, and shakes.
+> Inkani Bites is a moving street food cart in Madurai, Tamil Nadu, serving fruit custard, fruit salads, desserts, snacks, and shakes.
 
-The official website is the source of truth for the current menu, prices, availability, and cart location. The cart may move, so check the live location and map before visiting. Online ordering is not available; call +91 93450 65011 to ask about the menu or place a phone order.
+Inkani Bites serves Madurai with tasty fruit custard and fresh fruit salads. Advance bulk orders are available for parties, weddings, family functions, and other events. Delivery can be arranged for bulk orders; call +91 93450 65011 with the date, quantity, and delivery location to confirm availability, service area, and charges. The official website is the source of truth for the current menu, prices, availability, and cart location. The cart may move, so check the live location and map before visiting. Online ordering is not available.
 
 ## Customer information
 
@@ -10,6 +10,7 @@ The official website is the source of truth for the current menu, prices, availa
 - [Current cart location](https://inkani.onrender.com/#location)
 - [Rewards pass](https://inkani.onrender.com/#wallet): collect five visits to unlock one complimentary fruit custard.
 - [Instagram: @inkanibites](https://www.instagram.com/inkanibites/)
+- Phone: +91 93450 65011 for menu questions, regular orders, and event bulk orders.
 
 ## Notes
 

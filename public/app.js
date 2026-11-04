@@ -12,6 +12,10 @@ const rewardNoticeVisits = new Map();
 const ORDER_PHONE_NUMBER = '9345065011';
 const shopAddress = document.getElementById('shopAddress');
 const shopMapLink = document.getElementById('shopMapLink');
+const currentLocationFaqAddresses = document.querySelectorAll(
+  '#currentLocationFaqAddress, #custardLocationFaqAddress'
+);
+const currentLocationMapLinks = document.querySelectorAll('[data-current-location-map]');
 const locationError = document.getElementById('locationError');
 const feedbackDialog = document.getElementById('feedbackDialog');
 const feedbackForm = document.getElementById('feedbackForm');
@@ -310,7 +314,9 @@ async function loadShopLocation() {
     }
 
     shopAddress.textContent = data.address;
+    for (const address of currentLocationFaqAddresses) address.textContent = data.address;
     shopMapLink.href = data.mapsUrl;
+    for (const link of currentLocationMapLinks) link.href = data.mapsUrl;
     shopMapLink.removeAttribute('aria-disabled');
     shopMapLink.removeAttribute('tabindex');
     shopMapLink.innerHTML = 'Get directions <span aria-hidden="true">↗</span>';
@@ -318,7 +324,11 @@ async function loadShopLocation() {
   } catch (error) {
     console.error('Unable to load the current shop location:', error);
     shopAddress.textContent = 'Please contact us to confirm today’s location.';
+    for (const address of currentLocationFaqAddresses) {
+      address.textContent = 'Please contact us to confirm today’s location.';
+    }
     shopMapLink.removeAttribute('href');
+    for (const link of currentLocationMapLinks) link.removeAttribute('href');
     shopMapLink.setAttribute('aria-disabled', 'true');
     shopMapLink.setAttribute('tabindex', '-1');
     shopMapLink.textContent = 'Directions unavailable';
